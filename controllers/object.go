@@ -24,7 +24,7 @@ func (c *ApiController) Command() {
 		return
 	}
 
-	if models.CheckUser(params["id"], params["secret"]) {
+	if !models.CheckUser(params["id"], params["secret"]) {
 		c.Response(1, "Secret error")
 		return
 	}
