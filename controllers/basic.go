@@ -22,3 +22,25 @@ func (c *ApiController) Response(code int, args ...interface{}) {
 		panic(err)
 	}
 }
+
+func (c *ApiController) HasParam(key string) (string, bool) {
+	param := c.Ctx.Request.Form.Get(key)
+	if len(param) == 0 {
+		c.Response(-1, "Miss param: " + key)
+		return param, false
+	}
+	return param, true
+}
+
+func (c *ApiController) RequireParams(keys ...string) (map[string]string, bool) {
+	ret := make(map[string]string)
+	var value string
+	var has bool
+	for _, key := range keys {
+		if value, has = c.HasParam(key); !has {
+			return ret, false
+		}
+		ret[key] = value
+	}
+	return ret, true
+}

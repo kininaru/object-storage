@@ -17,24 +17,25 @@ type ApiController struct {
 }
 
 func (c *ApiController) Command() {
-	command := c.Ctx.Request.Form.Get("command")
-	data := c.Ctx.Request.Form.Get("data")
-	id := c.Ctx.Request.Form.Get("id")
-	secret := c.Ctx.Request.Form.Get("secret")
-	ext := c.Ctx.Request.Form.Get("extension")
-	path := c.Ctx.Request.Form.Get("path")
+	var params map[string]string
+	ok := false
 
-	if models.CheckUser(id, secret) {
+	if params, ok = c.RequireParams("command", "data", "id", "secret", "extension", "path"); !ok {
+		return
+	}
+
+	if models.CheckUser(params["id"], params["secret"]) {
 		c.Response(1, "Secret error")
 		return
 	}
 
-	index := strings.Index(data, ",")
+	data := ""
+	index := strings.Index(params["data"], ",")
 	if index >= 0 {
-		data = data[index+1:]
+		data = params["data"][index+1:]
 	}
 
-	switch command {
+	switch params["command"] {
 	case "put":
 		dist, err := base64.StdEncoding.DecodeString(data)
 		if err != nil {
@@ -42,11 +43,11 @@ func (c *ApiController) Command() {
 			c.Response(2, "base64 error")
 			return
 		}
-		name := models.SaveToLocal(dist, ext)
-		models.AddToFileRecord(path, name)
+		name := models.SaveToLocal(dist, params["extension"])
+		models.AddToFileRecord(params["path"], name)
 	}
 
-	logText := fmt.Sprintf("Command received: %s", command)
+	logText := fmt.Sprintf("Command received: %s", params["command"])
 	c.Response(0)
 	logs.Info(logText)
 }

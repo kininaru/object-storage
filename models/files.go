@@ -11,7 +11,7 @@ func SaveToLocal(file []byte, ext string) string {
 	timestamp := time.Now().UnixNano()
 	fileName := fmt.Sprintf("%d.%s", timestamp, ext)
 	path := fmt.Sprintf("./files/%s", fileName)
-	fileObj, err := os.OpenFile(path, os.O_CREATE, 0666)
+	fileObj, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
 		panic(err)
 	}
