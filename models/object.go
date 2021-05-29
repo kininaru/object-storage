@@ -1,53 +1,28 @@
 package models
 
 import (
-	"errors"
-	"strconv"
-	"time"
+	beego "github.com/beego/beego/v2/server/web"
+	_ "github.com/go-sql-driver/mysql"
+	"xorm.io/xorm"
 )
 
-var (
-	Objects map[string]*Object
-)
-
-type Object struct {
-	ObjectId   string
-	Score      int64
-	PlayerName string
-}
+var database *xorm.Engine
 
 func init() {
-	Objects = make(map[string]*Object)
-	Objects["hjkhsbnmn123"] = &Object{"hjkhsbnmn123", 100, "astaxie"}
-	Objects["mjjkxsxsaa23"] = &Object{"mjjkxsxsaa23", 101, "someone"}
-}
-
-func AddOne(object Object) (ObjectId string) {
-	object.ObjectId = "astaxie" + strconv.FormatInt(time.Now().UnixNano(), 10)
-	Objects[object.ObjectId] = &object
-	return object.ObjectId
-}
-
-func GetOne(ObjectId string) (object *Object, err error) {
-	if v, ok := Objects[ObjectId]; ok {
-		return v, nil
+	db, err := beego.AppConfig.String("sqlconn")
+	if err != nil {
+		panic(err)
 	}
-	return nil, errors.New("ObjectId Not Exist")
-}
-
-func GetAll() map[string]*Object {
-	return Objects
-}
-
-func Update(ObjectId string, Score int64) (err error) {
-	if v, ok := Objects[ObjectId]; ok {
-		v.Score = Score
-		return nil
+	database, err = xorm.NewEngine("mysql", db)
+	if err != nil {
+		panic(err)
 	}
-	return errors.New("ObjectId Not Exist")
+	err = database.Sync2(new(FileRecord))
+	if err != nil {
+		panic(err)
+	}
+	err = database.Sync2(new(User))
+	if err != nil {
+		panic(err)
+	}
 }
-
-func Delete(ObjectId string) {
-	delete(Objects, ObjectId)
-}
-

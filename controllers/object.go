@@ -1,92 +1,74 @@
 package controllers
 
 import (
-	"object-storage/models"
-	"encoding/json"
+	"encoding/base64"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
 
+	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
+	"object-storage/models"
 )
 
-// Operations about object
-type ObjectController struct {
+type ApiController struct {
 	beego.Controller
 }
 
-// @Title Create
-// @Description create object
-// @Param	body		body 	models.Object	true		"The object content"
-// @Success 200 {string} models.Object.Id
-// @Failure 403 body is empty
-// @router / [post]
-func (o *ObjectController) Post() {
-	var ob models.Object
-	json.Unmarshal(o.Ctx.Input.RequestBody, &ob)
-	objectid := models.AddOne(ob)
-	o.Data["json"] = map[string]string{"ObjectId": objectid}
-	o.ServeJSON()
-}
+func (c *ApiController) Command() {
+	command := c.Ctx.Request.Form.Get("command")
+	data := c.Ctx.Request.Form.Get("data")
+	id := c.Ctx.Request.Form.Get("id")
+	secret := c.Ctx.Request.Form.Get("secret")
+	ext := c.Ctx.Request.Form.Get("extension")
+	path := c.Ctx.Request.Form.Get("path")
 
-// @Title Get
-// @Description find object by objectid
-// @Param	objectId		path 	string	true		"the objectid you want to get"
-// @Success 200 {object} models.Object
-// @Failure 403 :objectId is empty
-// @router /:objectId [get]
-func (o *ObjectController) Get() {
-	objectId := o.Ctx.Input.Param(":objectId")
-	if objectId != "" {
-		ob, err := models.GetOne(objectId)
+	if models.CheckUser(id, secret) {
+		c.Response(1, "Secret error")
+		return
+	}
+
+	index := strings.Index(data, ",")
+	if index >= 0 {
+		data = data[index+1:]
+	}
+
+	switch command {
+	case "put":
+		dist, err := base64.StdEncoding.DecodeString(data)
 		if err != nil {
-			o.Data["json"] = err.Error()
-		} else {
-			o.Data["json"] = ob
+			fmt.Println(err)
+			c.Response(2, "base64 error")
+			return
 		}
+		name := models.SaveToLocal(dist, ext)
+		models.AddToFileRecord(path, name)
 	}
-	o.ServeJSON()
+
+	logText := fmt.Sprintf("Command received: %s", command)
+	c.Response(0)
+	logs.Info(logText)
 }
 
-// @Title GetAll
-// @Description get all objects
-// @Success 200 {object} models.Object
-// @Failure 403 :objectId is empty
-// @router / [get]
-func (o *ObjectController) GetAll() {
-	obs := models.GetAll()
-	o.Data["json"] = obs
-	o.ServeJSON()
-}
+func (c *ApiController) GetFile() {
+	path := c.Ctx.Input.Param(":splat")
 
-// @Title Update
-// @Description update the object
-// @Param	objectId		path 	string	true		"The objectid you want to update"
-// @Param	body		body 	models.Object	true		"The body"
-// @Success 200 {object} models.Object
-// @Failure 403 :objectId is empty
-// @router /:objectId [put]
-func (o *ObjectController) Put() {
-	objectId := o.Ctx.Input.Param(":objectId")
-	var ob models.Object
-	json.Unmarshal(o.Ctx.Input.RequestBody, &ob)
+	name := models.GetFile(path)
+	name = fmt.Sprintf("./files/%s", name)
 
-	err := models.Update(objectId, ob.Score)
+	file, err := os.OpenFile(name, os.O_RDONLY, 0666)
 	if err != nil {
-		o.Data["json"] = err.Error()
-	} else {
-		o.Data["json"] = "update success!"
+		c.Response(1)
+		return
 	}
-	o.ServeJSON()
-}
+	defer file.Close()
 
-// @Title Delete
-// @Description delete the object
-// @Param	objectId		path 	string	true		"The objectId you want to delete"
-// @Success 200 {string} delete success!
-// @Failure 403 objectId is empty
-// @router /:objectId [delete]
-func (o *ObjectController) Delete() {
-	objectId := o.Ctx.Input.Param(":objectId")
-	models.Delete(objectId)
-	o.Data["json"] = "delete success!"
-	o.ServeJSON()
+	c.Ctx.ResponseWriter.WriteHeader(200)
+	fileByte, err := ioutil.ReadAll(file)
+	_, err = c.Ctx.ResponseWriter.Write(fileByte)
+	if err != nil {
+		c.Response(2)
+		return
+	}
 }
-
