@@ -20,7 +20,7 @@ func (c *ApiController) Command() {
 	var params map[string]string
 	ok := false
 
-	if params, ok = c.RequireParams("command", "data", "id", "secret", "extension", "path"); !ok {
+	if params, ok = c.RequireParams("command", "data", "id", "secret", "path"); !ok {
 		return
 	}
 
@@ -43,7 +43,7 @@ func (c *ApiController) Command() {
 			c.Response(2, "base64 error")
 			return
 		}
-		name := models.SaveToLocal(dist, params["extension"])
+		name := models.SaveToLocal(dist)
 		models.AddToFileRecord(params["path"], name)
 	}
 
