@@ -32,15 +32,11 @@ func (c *ApiController) HasParam(key string) (string, bool) {
 	return param, true
 }
 
-func (c *ApiController) RequireParams(keys ...string) (map[string]string, bool) {
-	ret := make(map[string]string)
-	var value string
-	var has bool
+func (c *ApiController) CheckPostBody(keys ...string) bool {
 	for _, key := range keys {
-		if value, has = c.HasParam(key); !has {
-			return ret, false
+		if _, has := c.HasParam(key); !has {
+			return false
 		}
-		ret[key] = value
 	}
-	return ret, true
+	return true
 }

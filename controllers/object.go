@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 	"object-storage/models"
 )
@@ -17,25 +16,22 @@ type ApiController struct {
 }
 
 func (c *ApiController) Command() {
-	var params map[string]string
-	ok := false
-
-	if params, ok = c.RequireParams("command", "data", "id", "secret", "path"); !ok {
+	if !c.CheckPostBody("command", "data", "id", "secret", "path") {
 		return
 	}
 
-	if !models.CheckUser(params["id"], params["secret"]) {
+	if !models.CheckUser(c.Ctx.Request.Form.Get("id"), c.Ctx.Request.Form.Get("secret")) {
 		c.Response(1, "Secret error")
 		return
 	}
 
 	data := ""
-	index := strings.Index(params["data"], ",")
+	index := strings.Index(c.Ctx.Request.Form.Get("data"), ",")
 	if index >= 0 {
-		data = params["data"][index+1:]
+		data = c.Ctx.Request.Form.Get("data")[index+1:]
 	}
 
-	switch params["command"] {
+	switch c.Ctx.Request.Form.Get("command") {
 	case "put":
 		dist, err := base64.StdEncoding.DecodeString(data)
 		if err != nil {
@@ -44,12 +40,10 @@ func (c *ApiController) Command() {
 			return
 		}
 		name := models.SaveToLocal(dist)
-		models.AddToFileRecord(params["path"], name)
+		models.AddToFileRecord(c.Ctx.Request.Form.Get("path"), name)
 	}
 
-	logText := fmt.Sprintf("Command received: %s", params["command"])
 	c.Response(0)
-	logs.Info(logText)
 }
 
 func (c *ApiController) GetFile() {
