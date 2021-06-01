@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	beego "github.com/beego/beego/v2/server/web"
 	"object-storage/models"
@@ -24,16 +23,12 @@ func (c *ApiController) Command() {
 		return
 	}
 
-	data := ""
-	index := strings.Index(c.Ctx.Request.Form.Get("data"), ",")
-	if index >= 0 {
-		data = c.Ctx.Request.Form.Get("data")[index+1:]
-	}
-
 	var respMsg string
 	switch c.Ctx.Request.Form.Get("command") {
 	case "put":
-		respMsg = models.PutFile(c.Ctx.Request.Form.Get("path"), data)
+		path := c.Ctx.Request.Form.Get("path")
+		data := c.Ctx.Request.Form.Get("data")
+		respMsg = models.PutFile(path, data)
 	default:
 		respMsg = "Unknown command type."
 	}
