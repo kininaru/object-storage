@@ -54,8 +54,16 @@ func (c *ApiController) Command() {
 
 func (c *ApiController) GetFile() {
 	path := c.Ctx.Input.Param(":splat")
+	if len(path) == 0 {
+		c.Response(-1, "No such file.")
+		return
+	}
 
 	name := models.GetFile(path)
+	if len(name) == 0 {
+		c.Response(-1, "No such file.")
+		return
+	}
 	name = fmt.Sprintf("./files/%s", name)
 
 	file, err := os.OpenFile(name, os.O_RDONLY, 0666)
