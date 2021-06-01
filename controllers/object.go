@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -31,16 +30,17 @@ func (c *ApiController) Command() {
 		data = c.Ctx.Request.Form.Get("data")[index+1:]
 	}
 
+	var respMsg string
 	switch c.Ctx.Request.Form.Get("command") {
 	case "put":
-		dist, err := base64.StdEncoding.DecodeString(data)
-		if err != nil {
-			fmt.Println(err)
-			c.Response(2, "base64 error")
-			return
-		}
-		name := models.SaveToLocal(dist)
-		models.AddToFileRecord(c.Ctx.Request.Form.Get("path"), name)
+		respMsg = models.PutFile(c.Ctx.Request.Form.Get("path"), data)
+	default:
+		respMsg = "Unknown command type."
+	}
+
+	if len(respMsg) != 0 {
+		c.Response(2, respMsg)
+		return
 	}
 
 	c.Response(0)
