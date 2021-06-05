@@ -2,6 +2,7 @@ package models
 
 import (
 	"bufio"
+	"crypto/md5"
 	"fmt"
 	"os"
 	"time"
@@ -9,7 +10,7 @@ import (
 
 func SaveToLocal(file []byte) string {
 	timestamp := time.Now().UnixNano()
-	fileName := fmt.Sprintf("%d", timestamp)
+	fileName := fmt.Sprintf("%d-%x", timestamp, md5.Sum(file))
 	path := fmt.Sprintf("./files/%s", fileName)
 	fileObj, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {

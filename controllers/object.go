@@ -14,11 +14,13 @@ type ApiController struct {
 }
 
 func (c *ApiController) Command() {
+	bucket := c.Ctx.Request.Host
+
 	if !c.CheckPostBody("command", "data", "id", "secret", "path") {
 		return
 	}
 
-	if !models.CheckUser(c.Ctx.Request.Form.Get("id"), c.Ctx.Request.Form.Get("secret")) {
+	if !models.CheckUser(c.Ctx.Request.Form.Get("id"), c.Ctx.Request.Form.Get("secret"), bucket) {
 		c.Response(1, "Secret error")
 		return
 	}
@@ -28,7 +30,7 @@ func (c *ApiController) Command() {
 	case "put":
 		path := c.Ctx.Request.Form.Get("path")
 		data := c.Ctx.Request.Form.Get("data")
-		respMsg = models.PutFile(path, data)
+		respMsg = models.PutFile(path, data, bucket)
 	default:
 		respMsg = "Unknown command type."
 	}
@@ -42,13 +44,15 @@ func (c *ApiController) Command() {
 }
 
 func (c *ApiController) GetFile() {
+	bucket := c.Ctx.Request.Host
+
 	path := c.Ctx.Input.Param(":splat")
 	if len(path) == 0 {
 		c.Response(-1, "No such file.")
 		return
 	}
 
-	name := models.GetFile(path)
+	name := models.GetFile(path, bucket)
 	if len(name) == 0 {
 		c.Response(-1, "No such file.")
 		return

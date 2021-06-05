@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func PutFile(path, data string) string {
+func PutFile(path, data, bucket string) string {
 	index := strings.Index(data, ",")
 	if index >= 0 {
 		data = data[index+1:]
@@ -15,6 +15,6 @@ func PutFile(path, data string) string {
 		return "base64 error"
 	}
 	name := SaveToLocal(dist)
-	AddToFileRecord(path, name)
+	AddToFileRecord(path, name, bucket)
 	return ""
 }
